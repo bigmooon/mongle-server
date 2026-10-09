@@ -5,7 +5,6 @@
 [![Python](https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white)](https://www.python.org/)
 [![Django](https://img.shields.io/badge/Django-5.2_LTS-092E20?logo=django&logoColor=white)](https://www.djangoproject.com/)
 [![MySQL](https://img.shields.io/badge/MySQL-8.4-4479A1?logo=mysql&logoColor=white)](https://www.mysql.com/)
-[![CI](https://github.com/bigmooon/mongle-server/actions/workflows/ci.yml/badge.svg)](https://github.com/bigmooon/mongle-server/actions/workflows/ci.yml)
 
 ## 프로젝트 개요
 
@@ -75,7 +74,7 @@ flowchart LR
 | Ruff lint / format | 통과 |
 | mypy | 통과 |
 
-CI에서는 MySQL 8.4와 Redis 8 서비스를 띄운 뒤 Ruff, Django 검사, mypy, pytest와 80% 커버리지 게이트를 실행합니다.
+CI workflow는 MySQL 8.4와 Redis 8 서비스를 띄운 뒤 Ruff, Django 검사, mypy, pytest와 80% 커버리지 게이트를 실행하도록 구성되어 있습니다.
 
 ## 빠른 시작
 
