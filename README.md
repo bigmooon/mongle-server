@@ -5,6 +5,7 @@
 [![Python](https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white)](https://www.python.org/)
 [![Django](https://img.shields.io/badge/Django-5.2_LTS-092E20?logo=django&logoColor=white)](https://www.djangoproject.com/)
 [![MySQL](https://img.shields.io/badge/MySQL-8.4-4479A1?logo=mysql&logoColor=white)](https://www.mysql.com/)
+[![CI](https://github.com/bigmooon/mongle-server/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/bigmooon/mongle-server/actions/workflows/ci.yml)
 
 ## 프로젝트 개요
 
