@@ -9,7 +9,13 @@
 
 ## 프로젝트 개요
 
-몽글마을은 사용자의 애착 인형을 AI 주민으로 만들고, 자연어 목표를 TODO와 캐릭터 퀘스트로 바꾸는 서비스입니다. Server는 제품의 도메인 데이터와 인증을 관리하고, 실행 시간이 긴 AI 요청을 Celery 작업으로 분리해 Web과 AI 서비스를 연결합니다.
+**내일도와줘, 몽글마을**은 자기관리를 시작하고 싶지만 계획을 세우거나 꾸준히 실천하기 어려운 20~30대를 위한 서비스입니다. 나의 애착 인형을 픽셀 마을의 AI 주민으로 만들고, 자연어로 이야기한 목표를 실행할 TODO로 구체화합니다.
+
+사용자는 계획을 확인하고 저장한 뒤, 자신의 할 일과 연결된 주민의 퀘스트를 함께 수행합니다. 퀘스트와 연결된 TODO를 완료하면 사과 토큰을 받고, 주민의 이미지·글이 담긴 개인 피드가 생성됩니다. 여기에 캘린더, 집중을 돕는 포모도로, 하루를 돌아보는 회고를 더해 **계획 → 실천 → 성취 기록**을 하나의 마을에서 경험하도록 구성했습니다.
+
+몽글마을은 나만의 캐릭터와 작은 실천을 쌓으며 다시 찾아오고 싶은 자기관리 경험을 목표로 합니다. 대상 사용자와 제품의 출발점은 [프로젝트 기획서의 「핵심 목표·주요 고객」](https://drive.google.com/file/d/1AT0YGK2BfbWJpBcsvgHfugAlRHEdQTak/view)에 정리되어 있습니다.
+
+Server는 이 경험이 사용자별 기록으로 남도록 인증, TODO·일정, 퀘스트, 보상, 피드와 회고 데이터를 관리합니다. Web의 요청을 AI 서비스와 연결하고, 캐릭터·피드·답글 생성은 Celery 작업으로 실행합니다. 계획·퀘스트 생성은 각 API의 제출·조회 방식에 맞춰 처리하며, 저장과 보상 지급은 Django가 담당합니다.
 
 | 영역 | 저장소 | 역할 |
 | --- | --- | --- |
@@ -19,7 +25,15 @@
 
 ## 문제 정의와 리서치 근거
 
-기획 단계에서 수집한 외부 조사 결과를 제품 가설과 기능 설계로 연결했습니다. 아래 수치는 자체 설문 결과가 아니라 [`프로젝트 기획서`](https://drive.google.com/file/d/1AT0YGK2BfbWJpBcsvgHfugAlRHEdQTak/view)에 정리한 선행 자료입니다.
+기획서가 주목한 문제는 **자기관리의 의욕이 실제 시작과 지속으로 이어지기 어렵다는 점**입니다. 하고 싶은 일은 있어도 무엇부터 해야 할지 막막하고, 계획을 세운 뒤에도 혼자 반복하는 과정에서 흥미를 잃기 쉽습니다. 기획서에서는 이러한 어려움을 목표 구체화, 피드백, 보상과 연결해 풀고자 했습니다. [문제 정의와 서비스 필요성](https://drive.google.com/file/d/1AT0YGK2BfbWJpBcsvgHfugAlRHEdQTak/view)
+
+몽글마을은 **쉽게 시작하기**와 **꾸준히 돌아오기**에 초점을 맞췄습니다. AI 플래너와 대화하며 목표를 작은 할 일로 나누고, 사용자가 확인한 계획부터 실천하도록 돕습니다. 여기에 애착 인형을 나만의 주민으로 만드는 경험과 퀘스트·사과 보상·주민 피드를 더했습니다. 내가 한 일을 캐릭터의 활동으로도 볼 수 있게 해, 다음 실천을 이어갈 동기를 만들고자 했습니다.
+
+![몽글마을의 기획 의도: 막막한 목표는 대화형 계획으로, 혼자 하는 실천은 나만의 주민과 함께, 작은 성취는 보상과 피드로 연결](docs/images/product-concept.svg)
+
+*프로젝트 기획서 1.3~1.4절과 2.1~2.3절을 바탕으로 재구성한 문제의식과 제품 접근입니다. 화면 구성은 [화면 설계서](https://drive.google.com/file/d/1YtJOZGWTRox2bAD4ejiBRfHChII9syMF/view), 사용 장면은 [시나리오 설계서](https://drive.google.com/file/d/1iEBtXu_PdO8v77O-_BnPvVMfbw2PgwJB/view)에서 확인할 수 있습니다.*
+
+기획 단계에서 참고한 외부 조사 결과는 아래와 같습니다. 조사 대상과 조건이 서로 다른 선행 자료이며, 몽글마을 사용자를 대상으로 측정한 결과는 아닙니다. 원문 출처 목록은 [프로젝트 기획서의 「출처」](https://drive.google.com/file/d/1AT0YGK2BfbWJpBcsvgHfugAlRHEdQTak/view)에 있습니다.
 
 | 관찰한 문제 | 조사 결과 | Server 설계에 반영한 방식 |
 | --- | --- | --- |
@@ -27,15 +41,17 @@
 | 생산성 앱을 오래 쓰기 어렵다 | 생산성 앱 리텐션: 1일 **32.86% → 30일 9.63%** | 퀘스트·피드·알림·회고 데이터를 하나의 실행 루프로 연결 |
 | AI 생성은 일반 요청보다 오래 걸린다 | 캐릭터·계획·이미지 생성에 외부 모델 호출 필요 | 캐릭터는 Celery·Redis와 DB job, TODO·퀘스트는 AI Submit/Poll 중계 적용 |
 
+이 자료를 바탕으로 “목표 구체화와 캐릭터 기반 보상이 시작과 재방문에 도움이 될 것”이라는 제품 가설을 세웠습니다. 실제 효과는 TODO 생성·완료율, 1·7·30일 재방문율, 회고 참여율 등으로 검증할 과제입니다. 상황별 응원이나 TODO와 퀘스트의 연결 조건 등 기획과 현재 구현이 달라진 부분은 [설계·구현 대조 기록](docs/CROSS_REPOSITORY_REVIEW.md)에 구분했습니다.
+
 ## 시스템 구조
 
-Server는 인증·도메인 데이터·DB 작업 상태를 소유하고, 작업 유형에 맞게 AI API를 호출합니다.
+Server는 인증과 사용자 데이터, DB에 기록하는 작업 상태를 관리하며 작업 유형에 맞게 AI API를 호출합니다.
 
 ```mermaid
 flowchart TB
     WEB["Web<br/>React · Phaser"]
     SERVER["Server<br/>Django · Celery"]
-    AI["AI<br/>FastAPI · 추론 어댑터"]
+    AI["AI<br/>FastAPI · 추론"]
     DB["관계형 데이터<br/>MySQL"]
     MEDIA["이미지 객체<br/>S3"]
 
@@ -45,9 +61,11 @@ flowchart TB
     AI -->|생성 이미지 업로드| MEDIA
 ```
 
-이 그림은 요청·저장 방향을 요약합니다. **Web은 AI API를 직접 호출하지 않습니다.** 원본 사진은 Django가 발급한 presigned URL로 Web이 S3에 직접 PUT하며, Django는 이미지 키·메타데이터와 캐릭터 생성 감사 JSON을 관리합니다. AI가 결과를 HTTP 응답/폴링 결과로 반환하면 Django가 도메인 DB에 반영합니다. S3 정적 Web 배포와 미디어 객체 저장은 용도를 구분합니다. Redis는 Server의 Celery broker/result 및 인증 캐시이고, AI job·플래너 대화는 별도 메모리 상태입니다. 이 그림의 MySQL은 제품 DB 구성이며, Django 기본 settings는 DATABASE_URL 미설정 시 SQLite로 대체됩니다. [설정 근거](https://github.com/bigmooon/mongle-server/blob/11f428734960dab8db60bc5bc7128fb62e8a495d/config/settings/base.py).
+Web의 AI 기능 요청은 Django를 거쳐 FastAPI로 전달됩니다. 원본 사진은 Django가 발급한 presigned URL로 Web이 S3에 직접 PUT하며, Django는 이미지 키·메타데이터와 캐릭터 생성 감사 JSON을 관리합니다. AI가 결과를 HTTP 응답/폴링 결과로 반환하면 Django가 도메인 DB에 반영합니다. S3는 Web 정적 파일 배포와 사용자 미디어 저장에 각각 사용합니다.
 
-근거: [src/shared/api/client.ts](https://github.com/bigmooon/mongle-web/blob/fcd2734b386035fca2d10980a1bb55ec8e90c4ba/src/shared/api/client.ts) · [src/features/character/api.ts](https://github.com/bigmooon/mongle-web/blob/fcd2734b386035fca2d10980a1bb55ec8e90c4ba/src/features/character/api.ts) · [apps/characters/tasks.py](https://github.com/bigmooon/mongle-server/blob/11f428734960dab8db60bc5bc7128fb62e8a495d/apps/characters/tasks.py) · [infrastructure/storage/s3.py](https://github.com/bigmooon/mongle-server/blob/11f428734960dab8db60bc5bc7128fb62e8a495d/infrastructure/storage/s3.py) · [api/deps.py](https://github.com/bigmooon/mongle-ai/blob/8f897687560a6ebf179e3a0894a3bfd05b778efc/api/deps.py)
+Redis는 Server의 Celery broker/result 및 인증 캐시이고, AI job·플래너 대화는 별도 메모리 상태입니다. 제품 DB는 MySQL을 사용하도록 구성되어 있고, Django 기본 설정에서는 `DATABASE_URL`을 지정하지 않으면 SQLite를 사용합니다. [설정 근거](https://github.com/bigmooon/mongle-server/blob/11f428734960dab8db60bc5bc7128fb62e8a495d/config/settings/base.py).
+
+관련 코드: [src/shared/api/client.ts](https://github.com/bigmooon/mongle-web/blob/fcd2734b386035fca2d10980a1bb55ec8e90c4ba/src/shared/api/client.ts) · [src/features/character/api.ts](https://github.com/bigmooon/mongle-web/blob/fcd2734b386035fca2d10980a1bb55ec8e90c4ba/src/features/character/api.ts) · [apps/characters/tasks.py](https://github.com/bigmooon/mongle-server/blob/11f428734960dab8db60bc5bc7128fb62e8a495d/apps/characters/tasks.py) · [infrastructure/storage/s3.py](https://github.com/bigmooon/mongle-server/blob/11f428734960dab8db60bc5bc7128fb62e8a495d/infrastructure/storage/s3.py) · [api/deps.py](https://github.com/bigmooon/mongle-ai/blob/8f897687560a6ebf179e3a0894a3bfd05b778efc/api/deps.py)
 
 ### 작업별 통신 방식
 
@@ -61,12 +79,12 @@ flowchart TB
 
 Web → Django 경로에는 `/api/v1`을 앞에 붙입니다. 캐릭터의 Server job ID와 AI job ID는 서로 다르며, 플래너는 AI job ID를 중계합니다. **Submit/Poll이 곧 Celery 사용이나 영속 복구를 뜻하지는 않습니다.**
 
-근거: [apps/todos/views.py](https://github.com/bigmooon/mongle-server/blob/11f428734960dab8db60bc5bc7128fb62e8a495d/apps/todos/views.py) · [apps/todos/ai_client.py](https://github.com/bigmooon/mongle-server/blob/11f428734960dab8db60bc5bc7128fb62e8a495d/apps/todos/ai_client.py) · [apps/characters/tasks.py](https://github.com/bigmooon/mongle-server/blob/11f428734960dab8db60bc5bc7128fb62e8a495d/apps/characters/tasks.py) · [apps/posts/tasks.py](https://github.com/bigmooon/mongle-server/blob/11f428734960dab8db60bc5bc7128fb62e8a495d/apps/posts/tasks.py) · [api/todo_creation/router.py](https://github.com/bigmooon/mongle-ai/blob/8f897687560a6ebf179e3a0894a3bfd05b778efc/api/todo_creation/router.py) · [api/quest_generation/router.py](https://github.com/bigmooon/mongle-ai/blob/8f897687560a6ebf179e3a0894a3bfd05b778efc/api/quest_generation/router.py)
+관련 코드: [apps/todos/views.py](https://github.com/bigmooon/mongle-server/blob/11f428734960dab8db60bc5bc7128fb62e8a495d/apps/todos/views.py) · [apps/todos/ai_client.py](https://github.com/bigmooon/mongle-server/blob/11f428734960dab8db60bc5bc7128fb62e8a495d/apps/todos/ai_client.py) · [apps/characters/tasks.py](https://github.com/bigmooon/mongle-server/blob/11f428734960dab8db60bc5bc7128fb62e8a495d/apps/characters/tasks.py) · [apps/posts/tasks.py](https://github.com/bigmooon/mongle-server/blob/11f428734960dab8db60bc5bc7128fb62e8a495d/apps/posts/tasks.py) · [api/todo_creation/router.py](https://github.com/bigmooon/mongle-ai/blob/8f897687560a6ebf179e3a0894a3bfd05b778efc/api/todo_creation/router.py) · [api/quest_generation/router.py](https://github.com/bigmooon/mongle-ai/blob/8f897687560a6ebf179e3a0894a3bfd05b778efc/api/quest_generation/router.py)
 
 
-## 코드·설계 문서 대조 기준
+## 문서 기준과 변경 이력
 
-2026-10-10에 세 저장소의 기본 브랜치 코드·환경 변수 예시·Compose·CI·API 클라이언트·라우터와 Drive의 시스템 아키텍처·시스템 구성도·화면 설계서·시나리오 설계서를 대조했습니다. 코드 링크는 검토 당시 커밋으로 고정했습니다. 과거 설계와 현재 구현의 차이, 확인 불가 항목, 수정·검증 내역은 [교차검증 기록](docs/CROSS_REPOSITORY_REVIEW.md)에 남깁니다. 기존 리서치와 평가 수치는 보존하며 현재 운영 성능으로 새로 주장하지 않습니다.
+README는 2026-10-10에 확인한 코드와 환경 변수 예시, Compose, CI 설정을 기준으로 작성했습니다. 코드 링크는 당시 커밋을 가리킵니다. Drive 설계 자료와 달라진 부분, 확인이 필요한 항목과 검증 내역은 [교차검증 기록](docs/CROSS_REPOSITORY_REVIEW.md)에서 확인할 수 있습니다.
 
 ## 관련 설계 문서
 
@@ -97,7 +115,7 @@ Web → Django 경로에는 `/api/v1`을 앞에 붙입니다. 캐릭터의 Serve
 flowchart TB
     JOIN["로그인 · 주민 입주"]
     PLAN["목표 구체화 · TODO 확정"]
-    DO["퀘스트 연결 · 완료 보상"]
+    DO["퀘스트 연결<br/>완료 보상"]
     REVIEW["개인 피드 · 댓글 · 회고"]
     JOIN --> PLAN --> DO --> REVIEW
 ```
@@ -121,7 +139,7 @@ flowchart TB
 
 사용자 인증은 Access JWT(기본 1시간)와 **opaque Refresh 토큰**을 함께 사용합니다. Refresh 원문은 HttpOnly 쿠키(`mongle_refresh_token`, `/api/v1/auth`, SameSite=Lax, 운영 Secure)에 넣고 DB에는 SHA-256 해시를 저장합니다. 갱신은 기존 행을 폐기하고 새 토큰으로 회전합니다. 자동 로그인은 2주, 일반 로그인은 3시간 수명을 사용하며 회전 시 갱신됩니다. AI 호출에는 사용자 JWT 대신 서비스 간 `X-API-Key`를 사용합니다.
 
-근거: [apps/users/views.py](https://github.com/bigmooon/mongle-server/blob/11f428734960dab8db60bc5bc7128fb62e8a495d/apps/users/views.py) · [apps/users/refresh_token_service.py](https://github.com/bigmooon/mongle-server/blob/11f428734960dab8db60bc5bc7128fb62e8a495d/apps/users/refresh_token_service.py) · [config/settings/base.py](https://github.com/bigmooon/mongle-server/blob/11f428734960dab8db60bc5bc7128fb62e8a495d/config/settings/base.py) · [api/security.py](https://github.com/bigmooon/mongle-ai/blob/8f897687560a6ebf179e3a0894a3bfd05b778efc/api/security.py)
+관련 코드: [apps/users/views.py](https://github.com/bigmooon/mongle-server/blob/11f428734960dab8db60bc5bc7128fb62e8a495d/apps/users/views.py) · [apps/users/refresh_token_service.py](https://github.com/bigmooon/mongle-server/blob/11f428734960dab8db60bc5bc7128fb62e8a495d/apps/users/refresh_token_service.py) · [config/settings/base.py](https://github.com/bigmooon/mongle-server/blob/11f428734960dab8db60bc5bc7128fb62e8a495d/config/settings/base.py) · [api/security.py](https://github.com/bigmooon/mongle-ai/blob/8f897687560a6ebf179e3a0894a3bfd05b778efc/api/security.py)
 
 | 저장소 | 실제 저장 대상·사용 위치 |
 | --- | --- |
@@ -130,7 +148,7 @@ flowchart TB
 | Redis | Celery broker/result backend, Django 요청 제한 캐시, 이메일 인증 코드·검증 토큰. 제품 TODO·플래너 대화의 영속 DB가 아님 |
 | AI 프로세스 메모리 | 생성 job 결과와 플래너 `MemorySaver`; Django 도메인 DB와 분리 |
 
-근거: [apps/users/models.py](https://github.com/bigmooon/mongle-server/blob/11f428734960dab8db60bc5bc7128fb62e8a495d/apps/users/models.py) · [apps/characters/models.py](https://github.com/bigmooon/mongle-server/blob/11f428734960dab8db60bc5bc7128fb62e8a495d/apps/characters/models.py) · [apps/todos/models.py](https://github.com/bigmooon/mongle-server/blob/11f428734960dab8db60bc5bc7128fb62e8a495d/apps/todos/models.py) · [apps/tags/models.py](https://github.com/bigmooon/mongle-server/blob/11f428734960dab8db60bc5bc7128fb62e8a495d/apps/tags/models.py) · [apps/quests/models.py](https://github.com/bigmooon/mongle-server/blob/11f428734960dab8db60bc5bc7128fb62e8a495d/apps/quests/models.py) · [apps/posts/models.py](https://github.com/bigmooon/mongle-server/blob/11f428734960dab8db60bc5bc7128fb62e8a495d/apps/posts/models.py) · [apps/users/signup_views.py](https://github.com/bigmooon/mongle-server/blob/11f428734960dab8db60bc5bc7128fb62e8a495d/apps/users/signup_views.py) · [apps/users/rate_limit.py](https://github.com/bigmooon/mongle-server/blob/11f428734960dab8db60bc5bc7128fb62e8a495d/apps/users/rate_limit.py) · [agents/todo_creation/planner/graph.py](https://github.com/bigmooon/mongle-ai/blob/8f897687560a6ebf179e3a0894a3bfd05b778efc/agents/todo_creation/planner/graph.py)
+관련 코드: [apps/users/models.py](https://github.com/bigmooon/mongle-server/blob/11f428734960dab8db60bc5bc7128fb62e8a495d/apps/users/models.py) · [apps/characters/models.py](https://github.com/bigmooon/mongle-server/blob/11f428734960dab8db60bc5bc7128fb62e8a495d/apps/characters/models.py) · [apps/todos/models.py](https://github.com/bigmooon/mongle-server/blob/11f428734960dab8db60bc5bc7128fb62e8a495d/apps/todos/models.py) · [apps/tags/models.py](https://github.com/bigmooon/mongle-server/blob/11f428734960dab8db60bc5bc7128fb62e8a495d/apps/tags/models.py) · [apps/quests/models.py](https://github.com/bigmooon/mongle-server/blob/11f428734960dab8db60bc5bc7128fb62e8a495d/apps/quests/models.py) · [apps/posts/models.py](https://github.com/bigmooon/mongle-server/blob/11f428734960dab8db60bc5bc7128fb62e8a495d/apps/posts/models.py) · [apps/users/signup_views.py](https://github.com/bigmooon/mongle-server/blob/11f428734960dab8db60bc5bc7128fb62e8a495d/apps/users/signup_views.py) · [apps/users/rate_limit.py](https://github.com/bigmooon/mongle-server/blob/11f428734960dab8db60bc5bc7128fb62e8a495d/apps/users/rate_limit.py) · [agents/todo_creation/planner/graph.py](https://github.com/bigmooon/mongle-ai/blob/8f897687560a6ebf179e3a0894a3bfd05b778efc/agents/todo_creation/planner/graph.py)
 
 ### 작업 실패·재시도와 복구 한계
 
@@ -140,7 +158,7 @@ flowchart TB
 - 주기 작업: 미완료 TODO 실패 처리·회고 알림·이미지 횟수 정리·Refresh 정리 스케줄이 있습니다. 로컬/운영 Compose에는 Beat 서비스가 없으므로 별도 Beat 실행 없이는 스케줄 설정만으로 작동하지 않습니다.
 - AI 재시작 시 메모리 job은 사라집니다. 캐릭터 DB job과 브라우저 pending 값이 남아 있어도 원격 추론을 재개하는 것은 아닙니다. Redis Compose에도 영속 볼륨/AOF 설정이 없어 재생성 시 큐 보존을 전제할 수 없습니다.
 
-근거: [apps/characters/tasks.py](https://github.com/bigmooon/mongle-server/blob/11f428734960dab8db60bc5bc7128fb62e8a495d/apps/characters/tasks.py) · [apps/characters/views.py](https://github.com/bigmooon/mongle-server/blob/11f428734960dab8db60bc5bc7128fb62e8a495d/apps/characters/views.py) · [apps/todos/views.py](https://github.com/bigmooon/mongle-server/blob/11f428734960dab8db60bc5bc7128fb62e8a495d/apps/todos/views.py) · [apps/posts/tasks.py](https://github.com/bigmooon/mongle-server/blob/11f428734960dab8db60bc5bc7128fb62e8a495d/apps/posts/tasks.py) · [apps/posts/views.py](https://github.com/bigmooon/mongle-server/blob/11f428734960dab8db60bc5bc7128fb62e8a495d/apps/posts/views.py) · [config/settings/base.py](https://github.com/bigmooon/mongle-server/blob/11f428734960dab8db60bc5bc7128fb62e8a495d/config/settings/base.py) · [docker-compose.yml](https://github.com/bigmooon/mongle-server/blob/11f428734960dab8db60bc5bc7128fb62e8a495d/docker-compose.yml) · [docker-compose.prod.yml](https://github.com/bigmooon/mongle-server/blob/11f428734960dab8db60bc5bc7128fb62e8a495d/docker-compose.prod.yml) · [api/character_creation/jobs.py](https://github.com/bigmooon/mongle-ai/blob/8f897687560a6ebf179e3a0894a3bfd05b778efc/api/character_creation/jobs.py)
+관련 코드: [apps/characters/tasks.py](https://github.com/bigmooon/mongle-server/blob/11f428734960dab8db60bc5bc7128fb62e8a495d/apps/characters/tasks.py) · [apps/characters/views.py](https://github.com/bigmooon/mongle-server/blob/11f428734960dab8db60bc5bc7128fb62e8a495d/apps/characters/views.py) · [apps/todos/views.py](https://github.com/bigmooon/mongle-server/blob/11f428734960dab8db60bc5bc7128fb62e8a495d/apps/todos/views.py) · [apps/posts/tasks.py](https://github.com/bigmooon/mongle-server/blob/11f428734960dab8db60bc5bc7128fb62e8a495d/apps/posts/tasks.py) · [apps/posts/views.py](https://github.com/bigmooon/mongle-server/blob/11f428734960dab8db60bc5bc7128fb62e8a495d/apps/posts/views.py) · [config/settings/base.py](https://github.com/bigmooon/mongle-server/blob/11f428734960dab8db60bc5bc7128fb62e8a495d/config/settings/base.py) · [docker-compose.yml](https://github.com/bigmooon/mongle-server/blob/11f428734960dab8db60bc5bc7128fb62e8a495d/docker-compose.yml) · [docker-compose.prod.yml](https://github.com/bigmooon/mongle-server/blob/11f428734960dab8db60bc5bc7128fb62e8a495d/docker-compose.prod.yml) · [api/character_creation/jobs.py](https://github.com/bigmooon/mongle-ai/blob/8f897687560a6ebf179e3a0894a3bfd05b778efc/api/character_creation/jobs.py)
 
 ## 담당한 부분
 
@@ -165,7 +183,7 @@ flowchart TB
 
 ## 검증 결과
 
-기존 README에 기록된 2026-10-10 로컬 검증 결과를 보존합니다. 아래 수치는 이번 문서 교차검증에서 재실행한 결과가 아닙니다.
+2026-10-10에 기록한 로컬 검증 결과입니다. 이번 README 수정에서는 애플리케이션 테스트를 다시 실행하지 않았습니다.
 
 | 검증 | 결과 |
 | --- | ---: |
@@ -182,7 +200,7 @@ CI workflow는 MySQL 8.4와 Redis 8 서비스를 띄운 뒤 Ruff, Django 검사,
 
 - Python 3.12
 - [uv](https://docs.astral.sh/uv/)
-- MySQL·Redis 또는 Docker. CI는 MySQL 8.4/Redis 8, 로컬 Compose는 MySQL 9.7/Redis 7, 운영 Compose는 Redis 7이며 DB는 외부 `DATABASE_URL`을 사용합니다. 버전 불일치는 현행 설정을 그대로 기록한 것이며 이번 문서 수정에서 변경하지 않았습니다. ([Compose](docker-compose.yml), [운영 Compose](docker-compose.prod.yml), [CI](.github/workflows/ci.yml))
+- MySQL·Redis 또는 Docker. CI는 MySQL 8.4/Redis 8, 로컬 Compose는 MySQL 9.7/Redis 7, 운영 Compose는 Redis 7이며 DB는 외부 `DATABASE_URL`을 사용합니다. 환경별 버전이 다르므로 실행하려는 구성의 설정을 확인해야 합니다. ([Compose](docker-compose.yml), [운영 Compose](docker-compose.prod.yml), [CI](.github/workflows/ci.yml))
 
 ### 로컬 실행
 
@@ -261,9 +279,9 @@ docs/                개발·배포 가이드
 
 Server의 TODO·퀘스트는 `MONGLE_AI_API_BASE`/`MONGLE_AI_API_KEY`, 캐릭터·피드·답글은 `AI_SERVICE_URL`/`AI_SERVICE_TOKEN`을 사용합니다. 두 키는 연결할 AI의 `MONGLE_API_KEY`와 맞춰야 합니다. 컨테이너에서 호스트 AI에 연결할 때 loopback 대신 도달 가능한 호스트 주소를 설정해야 합니다.
 
-이 설명은 배포 **설정** 검증입니다. 실제 DNS·CloudFront origin·RDS 엔진 버전·RunPod 활성 모델·비밀 환경 변수는 저장소만으로 확정할 수 없습니다. Nginx 대기 제한(120초), Server AI 폴링 기본 예산(150초), Gunicorn 제한(180초)이 달라 동기 대기 경로의 타임아웃 위험도 남아 있습니다.
+배포 경로는 저장소의 Compose와 CI 설정을 기준으로 정리했습니다. 실제 DNS, CloudFront origin, RDS 엔진 버전, RunPod에서 사용 중인 모델과 비밀 환경 변수는 운영 환경에서 별도로 확인해야 합니다. Nginx 대기 제한(120초), Server AI 폴링 기본 예산(150초), Gunicorn 제한(180초)이 달라 동기 대기 경로의 타임아웃 위험도 남아 있습니다.
 
-근거: [.github/workflows/deploy-web.yml](https://github.com/bigmooon/mongle-web/blob/fcd2734b386035fca2d10980a1bb55ec8e90c4ba/.github/workflows/deploy-web.yml) · [vite.config.ts](https://github.com/bigmooon/mongle-web/blob/fcd2734b386035fca2d10980a1bb55ec8e90c4ba/vite.config.ts) · [.github/workflows/deploy-server.yml](https://github.com/bigmooon/mongle-server/blob/11f428734960dab8db60bc5bc7128fb62e8a495d/.github/workflows/deploy-server.yml) · [nginx/api.conf](https://github.com/bigmooon/mongle-server/blob/11f428734960dab8db60bc5bc7128fb62e8a495d/nginx/api.conf) · [Dockerfile](https://github.com/bigmooon/mongle-server/blob/11f428734960dab8db60bc5bc7128fb62e8a495d/Dockerfile) · [.env.example](https://github.com/bigmooon/mongle-server/blob/11f428734960dab8db60bc5bc7128fb62e8a495d/.env.example) · [.github/workflows/deploy-api.yml](https://github.com/bigmooon/mongle-ai/blob/8f897687560a6ebf179e3a0894a3bfd05b778efc/.github/workflows/deploy-api.yml) · [.github/workflows/deploy-workers.yml](https://github.com/bigmooon/mongle-ai/blob/8f897687560a6ebf179e3a0894a3bfd05b778efc/.github/workflows/deploy-workers.yml) · [docker-compose.yml](https://github.com/bigmooon/mongle-ai/blob/8f897687560a6ebf179e3a0894a3bfd05b778efc/docker-compose.yml)
+관련 코드: [.github/workflows/deploy-web.yml](https://github.com/bigmooon/mongle-web/blob/fcd2734b386035fca2d10980a1bb55ec8e90c4ba/.github/workflows/deploy-web.yml) · [vite.config.ts](https://github.com/bigmooon/mongle-web/blob/fcd2734b386035fca2d10980a1bb55ec8e90c4ba/vite.config.ts) · [.github/workflows/deploy-server.yml](https://github.com/bigmooon/mongle-server/blob/11f428734960dab8db60bc5bc7128fb62e8a495d/.github/workflows/deploy-server.yml) · [nginx/api.conf](https://github.com/bigmooon/mongle-server/blob/11f428734960dab8db60bc5bc7128fb62e8a495d/nginx/api.conf) · [Dockerfile](https://github.com/bigmooon/mongle-server/blob/11f428734960dab8db60bc5bc7128fb62e8a495d/Dockerfile) · [.env.example](https://github.com/bigmooon/mongle-server/blob/11f428734960dab8db60bc5bc7128fb62e8a495d/.env.example) · [.github/workflows/deploy-api.yml](https://github.com/bigmooon/mongle-ai/blob/8f897687560a6ebf179e3a0894a3bfd05b778efc/.github/workflows/deploy-api.yml) · [.github/workflows/deploy-workers.yml](https://github.com/bigmooon/mongle-ai/blob/8f897687560a6ebf179e3a0894a3bfd05b778efc/.github/workflows/deploy-workers.yml) · [docker-compose.yml](https://github.com/bigmooon/mongle-ai/blob/8f897687560a6ebf179e3a0894a3bfd05b778efc/docker-compose.yml)
 
 ## 한계와 다음 과제
 
