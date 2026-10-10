@@ -32,6 +32,17 @@ flowchart LR
 
 인증·데이터 정합성은 Django가 담당하고, 모델 추론은 AI 서비스에 위임합니다. 캐릭터와 TODO 생성은 요청 접수와 결과 조회를 분리해 긴 추론 시간에도 Web 요청이 유지되도록 설계했습니다.
 
+## 관련 설계 문서
+
+| 문서 | 확인할 수 있는 내용 |
+| --- | --- |
+| [시스템 아키텍처](https://drive.google.com/file/d/15p49ZUIrJCmrSCy3LpU3FbjapZaMXdRc/view) | Web·Server·AI 간 구성과 배포 경계 |
+| [시스템 구성도](https://drive.google.com/file/d/1-M3fjfxeVXiphXsJgJKYBiKmq1vcqFBz/view) | 서비스·인프라 구성 요소와 연결 관계 |
+| [DB 설계 문서](https://drive.google.com/file/d/1PevvUKy8Mx8ltC6oueXnY-aVUMJEuqm8/view) | 주요 도메인과 데이터 모델 |
+| [시스템 테스트 계획 및 결과](https://drive.google.com/file/d/16Zkb4-XlJT8G2_D4bAImJMAZZeY1ag3w/view) | 통합 검증 범위와 수행 결과 |
+
+[전체 프로젝트 산출물 보기](https://drive.google.com/drive/folders/1Lfv49TDbilo4ivoSIpw4v8RDEnEw9quC)
+
 ## 주요 기능
 
 - 이메일 인증, JWT 갱신과 카카오 소셜 로그인
