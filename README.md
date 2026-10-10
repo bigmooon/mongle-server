@@ -20,20 +20,14 @@
 ## 시스템 구조
 
 ```mermaid
-flowchart TB
-    WEB[React Web]
-    API[Django REST API]
-    MYSQL[(MySQL)]
-    REDIS[(Redis)]
-    S3[(Amazon S3)]
-    CELERY["Celery<br/>Worker · Beat"]
-    AI["FastAPI<br/>AI Service"]
+flowchart LR
+    REQUEST["Request Path<br/>React Web → Django REST"]
+    DATA["Data<br/>MySQL · Amazon S3"]
+    ASYNC["Async AI<br/>Redis → Celery → FastAPI"]
 
-    WEB -->|REST · JWT cookie| API
-    API --> MYSQL
-    API --> S3
-    API --> REDIS --> CELERY -->|API key| AI
-    AI --> S3
+    REQUEST --> DATA
+    REQUEST --> ASYNC
+    ASYNC --> DATA
 ```
 
 인증·데이터 정합성은 Django가 담당하고, 모델 추론은 AI 서비스에 위임합니다. 캐릭터와 TODO 생성은 요청 접수와 결과 조회를 분리해 긴 추론 시간에도 Web 요청이 유지되도록 설계했습니다.
