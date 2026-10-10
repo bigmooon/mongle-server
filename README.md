@@ -20,13 +20,19 @@
 ## 시스템 구조
 
 ```mermaid
-flowchart LR
-    WEB[React Web] -->|REST / JWT cookie| API[Django REST API]
-    API --> MYSQL[(MySQL)]
-    API --> REDIS[(Redis)]
-    REDIS --> CELERY[Celery Worker / Beat]
-    CELERY -->|API key| AI[FastAPI AI Service]
-    API --> S3[(Amazon S3)]
+flowchart TB
+    WEB[React Web]
+    API[Django REST API]
+    MYSQL[(MySQL)]
+    REDIS[(Redis)]
+    S3[(Amazon S3)]
+    CELERY["Celery<br/>Worker · Beat"]
+    AI["FastAPI<br/>AI Service"]
+
+    WEB -->|REST · JWT cookie| API
+    API --> MYSQL
+    API --> S3
+    API --> REDIS --> CELERY -->|API key| AI
     AI --> S3
 ```
 
