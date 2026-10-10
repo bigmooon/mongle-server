@@ -17,10 +17,20 @@
 | Server | **현재 저장소** | 인증·도메인 API·비동기 작업 관리 |
 | AI | [mongle-ai](https://github.com/bigmooon/mongle-ai) | LLM/VLM 에이전트와 추론 API |
 
+## 문제 정의와 리서치 근거
+
+기획 단계에서 수집한 외부 조사 결과를 제품 가설과 기능 설계로 연결했습니다. 아래 수치는 자체 설문 결과가 아니라 [`프로젝트 기획서`](https://drive.google.com/file/d/1AT0YGK2BfbWJpBcsvgHfugAlRHEdQTak/view)에 정리한 선행 자료입니다.
+
+| 관찰한 문제 | 조사 결과 | Server 설계에 반영한 방식 |
+| --- | --- | --- |
+| 시작 자체가 어렵다 | 귀찮음 **25.8%**, 무엇을 할지 모름 **24.4%**, 시간 부족 **21.7%** | 자연어 계획을 TODO·일정으로 저장하는 도메인 API 구성 |
+| 생산성 앱을 오래 쓰기 어렵다 | 생산성 앱 리텐션: 1일 **32.86% → 30일 9.63%** | 퀘스트·피드·알림·회고 데이터를 하나의 실행 루프로 연결 |
+| AI 생성은 일반 요청보다 오래 걸린다 | 캐릭터·계획·이미지 생성에 외부 모델 호출 필요 | Celery·Redis 기반 Submit/Poll과 상태 조회 API 적용 |
+
 ## 시스템 구조
 
 ```mermaid
-flowchart LR
+flowchart TB
     REQUEST["Request Path<br/>React Web → Django REST"]
     DATA["Data<br/>MySQL · Amazon S3"]
     ASYNC["Async AI<br/>Redis → Celery → FastAPI"]
@@ -36,6 +46,7 @@ flowchart LR
 
 | 문서 | 확인할 수 있는 내용 |
 | --- | --- |
+| [프로젝트 기획서](https://drive.google.com/file/d/1AT0YGK2BfbWJpBcsvgHfugAlRHEdQTak/view) | 문제 정의, 시장·사용자 리서치와 제품 가설 |
 | [시스템 아키텍처](https://drive.google.com/file/d/15p49ZUIrJCmrSCy3LpU3FbjapZaMXdRc/view) | Web·Server·AI 간 구성과 배포 경계 |
 | [시스템 구성도](https://drive.google.com/file/d/1-M3fjfxeVXiphXsJgJKYBiKmq1vcqFBz/view) | 서비스·인프라 구성 요소와 연결 관계 |
 | [DB 설계 문서](https://drive.google.com/file/d/1PevvUKy8Mx8ltC6oueXnY-aVUMJEuqm8/view) | 주요 도메인과 데이터 모델 |
