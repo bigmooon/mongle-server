@@ -156,18 +156,16 @@ def process_character_generation_job(
 
     from apps.characters.models import CharacterGenerationJob
 
-    try:
-        job = CharacterGenerationJob.objects.get(pk=job_id)
-    except CharacterGenerationJob.DoesNotExist:
-        return
-
-    # 시작 전에 취소(FAILED)됐으면 처리하지 않고 종료한다.
-    # 환불(ImgGenLog 삭제)은 취소 뷰가 이미 처리하므로 여기서 하지 않는다.
-    if job.status == CharacterGenerationJob.Status.FAILED:
-        return
-
-    job.status = CharacterGenerationJob.Status.IN_PROGRESS
-    job.save(update_fields=["status", "updated_at"])
+    # Claim only a queued job, serialized with cancellation and duplicate delivery.
+    with transaction.atomic():
+        try:
+            job = CharacterGenerationJob.objects.select_for_update().get(pk=job_id)
+        except CharacterGenerationJob.DoesNotExist:
+            return
+        if job.status != CharacterGenerationJob.Status.QUEUED:
+            return
+        job.status = CharacterGenerationJob.Status.IN_PROGRESS
+        job.save(update_fields=["status", "updated_at"])
 
     try:
         # mongle-ai 는 source_image_key(S3 object key)로 원본 이미지를 boto3 fetch 한다.
